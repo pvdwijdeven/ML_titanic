@@ -19,6 +19,12 @@ if(!require('RColorBrewer')){
   install.packages('RColorBrewer')
   library(RColorBrewer)
 }
+if(!require('mcclust')){
+  install.packages('mcclust')
+  library(mcclust)
+}
+
+
 # set path
 setwd("H:/R/ML_Titanic")
 
@@ -75,16 +81,16 @@ combi$FamilyID2[combi$FamilySize <= 3] <- 'Small'
 combi$FamilyID2 <- factor(combi$FamilyID2)
 
 #Now cabin number. For now we will use only deck
-combi$Cabin <- as.character(combi$Cabin)
-combi$Deck <- "U"
-combi$Deck <- substring(combi$Cabin, 1, 1)
-combi$Deck[combi$Deck==""] <- "U"
-combi$Deck <- factor(combi$Deck)
-combi$Cabin <- factor(combi$Cabin)
-Deckfit <- rpart(Deck ~ Pclass + Sex + SibSp + Parch + Fare + Embarked + Title + FamilySize,
-                data=combi[(combi$Deck!="U"),], method="anova")
-fancyRpartPlot(Deckfit)
-combi$Deck[(combi$Deck=="U")] <- predict(Deckfit, combi[(combi$Deck=="U"),])
+#combi$Cabin <- as.character(combi$Cabin)
+#combi$Deck <- "U"
+#combi$Deck <- substring(combi$Cabin, 1, 1)
+#combi$Deck[combi$Deck==""] <- "U"
+#Deckfit <- rpart(Deck ~ Pclass + Sex + SibSp + Parch + Fare + Embarked + Title + FamilySize,
+#                data=combi[(combi$Deck!="U"),], method="class")
+#fancyRpartPlot(Deckfit)
+#combi$Deck[(combi$Deck=="U")] <- predict(Deckfit, combi[(combi$Deck=="U"),])
+#combi$Deck <- factor(combi$Deck)
+#combi$Cabin <- factor(combi$Cabin)
 
 # ticket price is a total - use ticketID, count # of tickets per ticketID and divide price by #oftickets
 temp <- table(combi$Ticket)
@@ -93,10 +99,19 @@ combi$Tprice <- combi$Fare/combi$Freq
 # sort on PassengerID again
 combi <- combi[order(combi$PassengerId),]
 
-#now fit the data!
-set.seed(415)
-fit <- cforest(as.factor(Survived) ~ Pclass + Sex + Age + SibSp + Parch + Tprice + Embarked + Title + FamilySize + FamilyID + Deck,
-               data = combi[1:891,], controls=cforest_unbiased(ntree=2000, mtry=3))
-Prediction <- predict(fit, combi[892:1309,], OOB=TRUE, type = "response")
+#now fit the data with neural network
+set.seed(500)
+mytrain <- combi[1:891,]
+mytest <- combi[892:1309,]
+
+index <- sample(1:nrow(mytrain),round(0.75*nrow(mytrain)))
+NNtrain <- mytrain[index,]
+NNtest <- mytrain[-index,]
+lm.fit <- glm(Survived ~ Pclass + Sex + Age + SibSp + Parch + Fare + Embarked, data=NNtrain)
+summary(lm.fit)
+pr.lm <- predict(lm.fit,MMtest)
+MSE.lm <- sum((pr.lm - MMtest$medv)^2)/nrow(MMtest)
+
+#and write it for submission
 submit <- data.frame(PassengerId = test$PassengerId, Survived = Prediction)
 write.csv(submit, file = "NN.csv", row.names = FALSE)
