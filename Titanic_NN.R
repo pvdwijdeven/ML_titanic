@@ -81,14 +81,19 @@ combi$FamilyID2[combi$FamilySize <= 3] <- 'Small'
 combi$FamilyID2 <- factor(combi$FamilyID2)
 
 #Now cabin number. For now we will use only deck
-#combi$Cabin <- as.character(combi$Cabin)
-#combi$Deck <- "U"
-#combi$Deck <- substring(combi$Cabin, 1, 1)
-#combi$Deck[combi$Deck==""] <- "U"
-#Deckfit <- rpart(Deck ~ Pclass + Sex + SibSp + Parch + Fare + Embarked + Title + FamilySize,
-#                data=combi[(combi$Deck!="U"),], method="class")
-#fancyRpartPlot(Deckfit)
-#combi$Deck[(combi$Deck=="U")] <- predict(Deckfit, combi[(combi$Deck=="U"),])
+combi$Cabin <- as.character(combi$Cabin)
+combi$Deck <- "U"
+combi$Deck <- substring(combi$Cabin, 1, 1)
+combi$Deck[combi$Deck==""] <- "U"
+#Deck = matrix(ncol=9,nrow=1309)
+Deck <- cbind(combi$Deck)
+Deckfit <- rpart(Deck=="G" ~ Pclass + Sex + SibSp + Parch + Fare + Embarked + Title + FamilySize,
+                data=combi[(combi$Deck!="U"),], method="class")
+combi$Deck[(combi$Deck=="U")] <- predict(Deckfit, combi[(combi$Deck=="U"),])
+fancyRpartPlot(Deckfit)
+Deck <- cbind(Deck,combi$Deck)
+
+
 #combi$Deck <- factor(combi$Deck)
 #combi$Cabin <- factor(combi$Cabin)
 
