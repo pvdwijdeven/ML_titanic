@@ -126,16 +126,17 @@ set.seed(415)
 #write.csv(submit, file = "partyforest.csv", row.names = FALSE)
 
 #now fit the data with neural network
+
 # make name length a feature
 tr1<-combi[1:891,] %>%
   mutate(lname=sapply(as.character(Name),nchar)) %>%
-  dplyr::select(-Ticket,-Cabin,-Name,-Fare)
+  dplyr::select(-Ticket,-Cabin,-Name,-Fare,-Freq,-FamilyID,-FamilyID2,-Surname,-Title)
 
 bins<-tr1 %>% # piped functions follow
   
   # make it narrow, don't touch numeric variables and IDs
-  gather(catnames,catvalues,-PassengerId,-Survived,-Age,-Tprice,-SibSp,
-         -Parch,-lname,-Deck,-Title,-FamilySize,-FamilyID) %>%
+  gather(catnames,catvalues,-PassengerId,-Survived,-SibSp,
+         -Parch,-Tprice, -Age,-lname,-Deck,-FamilySize) %>%
   
   # make single column out of them
   unite(newfactor,catnames,catvalues,sep=".") %>%
@@ -151,7 +152,7 @@ seed<-2
 #cat(paste0(names(bins),sep="+"))
 bins.nn<-function(df,rep=1,hidden=c(1),threshold=0.1) {
   set.seed(seed)
-  nn.obj<-neuralnet(Survived ~ SibSp+ Parch+Tprice+ Age+ FamilySize+ Embarked.C+ Embarked.Q+ Embarked.S+ Pclass.1+ Pclass.2+ Pclass.3+ Sex.female+ Sex.male,
+  nn.obj<-neuralnet(Survived ~ SibSp+ Parch+Tprice+ Age+ lname+ Deck+ FamilySize+ Embarked.C+ Embarked.Q+ Embarked.S+ Pclass.1+ Pclass.2+ Pclass.3+ Sex.female+ Sex.male,
                     data=df,
                     hidden=hidden,
                     lifesign="full",
@@ -225,7 +226,7 @@ if(FALSE){
   pult<-matrix(NA, nrow=dim(bins.test)[1])
   alltries<-1:tries
   mineff<-mean(unlist(eff))#85##########################
-  goodtries<-alltries[unlist(eff)>mineff]
+  goodtries<-alltries[unlist(eff)>40]
   for(i  in goodtries){
     res<-neuralnet::compute(mult[[i]],bins.test[,2:nfeat.test])#testers[,3:nfeat])
     pult<-cbind(pult,cleanup(round(res$net.result)))                           
@@ -249,13 +250,12 @@ if(FALSE){
 ts1<-combi[892:1309,] %>%
   mutate(lname=sapply(as.character(Name),nchar)) %>%
 
-  dplyr::select(-Ticket,-Cabin,-Name,-Fare)
-
+  dplyr::select(-Ticket,-Cabin,-Name,-Fare,-Freq,-FamilyID,-FamilyID2,-Surname,-Title)
 bins.test<-ts1 %>% # piped functions follow
   
   # make it narrow, don't touch numeric variables and IDs
-  gather(catnames,catvalues,-PassengerId,-Survived,-Age,-Tprice,-SibSp,
-         -Parch,-lname,-Deck,-Title,-FamilySize,-FamilyID) %>%
+  gather(catnames,catvalues,-PassengerId,-Survived,-SibSp,
+         -Parch,-Tprice, -Age,-lname,-Deck,-FamilySize) %>%
   
   # make single column out of them
   unite(newfactor,catnames,catvalues,sep=".") %>%
